@@ -6,10 +6,10 @@ module.exports = async (query, request) => {
   query.cookie.os = 'pc'
   const data = {
     username: query.email,
-    password: crypto.createHash('md5').update(query.password).digest('hex'),
+    password: query.md5_password || crypto.createHash('md5').update(query.password).digest('hex'),
     rememberLogin: 'true'
   }
-  const result = await request(
+  let result = await request(
     'POST', `https://music.163.com/weapi/login`, data,
     { crypto: 'weapi', ua: 'pc', cookie: query.cookie, proxy: query.proxy }
   )
@@ -21,6 +21,16 @@ module.exports = async (query, request) => {
         'code': 502,
         'message': '账号或密码错误'
       }
+    }
+  }
+  if (result.body.code === 200) {
+    result = {
+      status: 200,
+      body: {
+        ...result.body,
+        cookie: result.cookie.join(';')
+      },
+      cookie: result.cookie
     }
   }
   return result
